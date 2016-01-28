@@ -1,0 +1,17 @@
+[
+  {
+    "name": "client-app",
+    "start": {
+      "bin":  "npm",
+      "args": ["start", "--silent"],
+      "options": { "cwd": "./client-app" }
+    }
+  },{
+    "name": "auth-app",
+    "start": {
+      "bin":  "npm",
+      "args": ["start" , "--silent"],
+      "options": { "cwd": "./auth-app" }
+    }
+  }
+]

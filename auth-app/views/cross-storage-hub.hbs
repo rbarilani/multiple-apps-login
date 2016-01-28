@@ -1,0 +1,15 @@
+<!doctype html>
+<head>
+    <title>Cross Storage Hub</title>
+</head>
+<body>
+<h3>Cross Storage Hub </h3>
+<script type="text/javascript" src="/vendor/cross-storage/dist/hub.js"></script>
+<script>
+    // Limit requests to any client running on allowed origins
+    window.CrossStorageHub.init([
+        {origin: /.*client-app.com$/, allow: ['get']}
+    ]);
+</script>
+</body>
+</html>

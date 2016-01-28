@@ -1,0 +1,17 @@
+{
+  "name": "lgoin-between-multiple-apps",
+  "version": "0.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "node start.js",
+    "start:http-master": "sudo ./node_modules/.bin/http-master --config config.json --show-rules"
+  },
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "http-master": "^1.0.18",
+    "http-proxy": "^1.11.2",
+    "lodash": "^4.0.0"
+  }
+}

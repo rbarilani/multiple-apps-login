@@ -1,0 +1,101 @@
+<h1>{{title}}</h1>
+<p>Welcome to {{title}}</p>
+
+<form id="login" style="display: none">
+    <label>
+        Username:
+        <input type="text" name="username" value="john"/>
+    </label>
+    <label>
+        Password:
+        <input type="text" name="password" />
+    </label>
+    <button type="submit">login</button>
+</form>
+
+<form id="logout" style="display: none">
+    You are logged in
+    <button type="submit">logout</button>
+</form>
+
+
+<script>
+    (function ($) {
+        // void
+        var $formLogin = $('form#login');
+        var $formLogout = $('form#logout');
+
+        updateUI();
+
+        function updateUI() {
+            if(getToken()) {
+                $formLogout.show();
+                $formLogin.hide();
+            }else{
+                $formLogin.show();
+                $formLogout.hide();
+            }
+        }
+
+        $formLogin.submit(function (e) {
+            e.preventDefault();
+            try{
+                doLogin($(this));
+                updateUI();
+            }catch(e) {
+                window.alert('Wrong credentials!');
+            }
+        });
+
+        $formLogout.submit(function (e) {
+            e.preventDefault();
+            doLogout($(this));
+            updateUI();
+        });
+
+        function doLogout() {
+            clearToken();
+        }
+
+        function doLogin($form) {
+            var credentials = $form
+                .serializeArray()
+                .reduce(function (object, field) {
+                    object[field.name] = field.value;
+                    return object;
+                }, {});
+
+            var token = authenticate(credentials);
+            if(token) { setToken(token); }
+        }
+
+        function authenticate(credentials) {
+            console.log('get the token...', credentials);
+            if(credentials.username == 'john' && credentials.password == 'doe') {
+                console.log('granted! token: 123');
+                return '123';
+            }
+            console.log('not granted!');
+            throw Error('Wrong credentials');
+        }
+
+        function getToken() {
+            try {
+                var stored = JSON.parse(window.localStorage.TOKEN || null);
+                if(stored && stored.value) {
+                    return stored.value;
+                }
+            }catch(e) {
+               console.error(e);
+            }
+        }
+
+        function setToken(token) {
+            window.localStorage.TOKEN = JSON.stringify({value: token});
+        }
+
+        function clearToken() {
+            delete window.localStorage.TOKEN;
+        }
+    })(window.jQuery);
+</script>
