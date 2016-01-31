@@ -21,6 +21,7 @@ var LoginClient = {};
       debug: false
     }
   };
+  var TOKEN_STORAGE_KEY = 'TOKEN';
 
   // state
   var _storage;
@@ -41,16 +42,15 @@ var LoginClient = {};
     delay: 5000,
     started: false,
     start: function (cb) {
-      if (this.started) {
-        return;
-      }
+      if (this.started) {return;}
       this.started = true;
+
       (function inner(_this) {
         if (_this.started === false) {
           return;
         }
         _this._timeout = window.setTimeout(function () {
-          _storage.get('TOKEN').then(function (val) {
+          _storage.get(TOKEN_STORAGE_KEY).then(function (val) {
             cb(val);
             inner(_this);
           }).catch(function (error) {
@@ -60,11 +60,10 @@ var LoginClient = {};
         }, _this.delay);
       })(this);
 
-      return _storage
-        .get('TOKEN');
+      return _storage.get(TOKEN_STORAGE_KEY);
     },
     stop: function () {
-      console.log('POLL STOP', '... clear timeout', this._timeout);
+      log('debug', 'POLL STOP', '... clear timeout', this._timeout);
       window.clearTimeout(this._timeout);
       this.started = false;
       return this;
@@ -72,37 +71,16 @@ var LoginClient = {};
   };
 
   /**
-   * Trigger event private function
-   * @description call al registered callbacks for an eventName
-   *
-   * @private
-   *
-   * @param {string} eventName
-   * @param {*} [...args] - arguments passed to the callbacks
-   */
-  function triggerEvent(eventName /*, ...args */ ) {
-    var args = Array.prototype.slice.call(arguments);
-    args.shift();
-
-    if (!_callbacks[eventName]) {
-      return;
-    }
-    _callbacks[eventName].forEach(function (cb) {
-      cb.apply(exports, args);
-    });
-  }
-
-  /**
    * Log helper private function
    *
    * @param {string} method - console log method to invoke
-   * @param {*} [...args] - arguments for the function
+   * @param {...*} [args] - arguments for the function
    */
-  function log(method) {
-    var args = Array.prototype.slice.call(arguments);
-    args.shift();
+  function log(method, args) {
+    var _args = Array.prototype.slice.call(arguments);
+    _args.shift();
     if(_options.debug) {
-      console[method].apply(null, args);
+      console[method].apply(null, _args);
     }
   }
 
@@ -128,6 +106,7 @@ var LoginClient = {};
 
   /**
    * Initialize the login client
+   * and establish a connection with authHost
    *
    * @param {string} [authHost] - default: http://auth-app.com
    * @param {object} [options]
@@ -149,33 +128,29 @@ var LoginClient = {};
           if (error) {
             log('error', error);
             pool.stop();
-            triggerEvent(EVENTS.ERROR, error);
+            exports.trigger(EVENTS.ERROR, error);
             return;
           }
 
           if (token && !_currToken) {
             _currToken = token;
-            if (_status === STATUS.LOGGED_IN) {
-              return;
-            }
+            if (_status === STATUS.LOGGED_IN) { return; }
             _status = STATUS.LOGGED_IN;
-            triggerEvent(EVENTS.LOGGED_IN);
+            exports.trigger(EVENTS.LOGGED_IN);
             return;
           }
 
           if (!_currToken && !token) {
-            if (_status === STATUS.LOGGED_OUT) {
-              return;
-            }
+            if (_status === STATUS.LOGGED_OUT) { return; }
             _status = STATUS.LOGGED_OUT;
-            triggerEvent(EVENTS.LOGGED_OUT);
+            exports.trigger(EVENTS.LOGGED_OUT);
             return;
           }
 
           if (!token && _currToken) {
             log('debug', 'TOKEN WAS REMOVED!', token);
             _currToken = token;
-            triggerEvent(EVENTS.CHANGE_LOGGED_OUT);
+            exports.trigger(EVENTS.CHANGE_LOGGED_OUT);
           }
         });
       })
@@ -183,19 +158,40 @@ var LoginClient = {};
         if (token) {
           _currToken = token;
           _status = STATUS.LOGGED_IN;
-          triggerEvent(EVENTS.LOGGED_IN);
+          exports.trigger(EVENTS.LOGGED_IN);
         } else {
           _status = STATUS.LOGGED_OUT;
-          triggerEvent(EVENTS.LOGGED_OUT);
+          exports.trigger(EVENTS.LOGGED_OUT);
         }
         return token;
       })
       .catch(function (error) {
         _status = STATUS.ERROR;
         log('error', error);
-        triggerEvent(EVENTS.ERROR, error);
+        exports.trigger(EVENTS.ERROR, error);
         throw error;
       });
+  };
+
+  /**
+   * Trigger event
+   * @description call al registered callbacks for an eventName
+   *
+   * @param {string} eventName
+   * @param {...} [args] - arguments passed to the callbacks
+   * @returns {LoginClient}
+   */
+  exports.trigger = function(eventName, args) {
+    var _args = Array.prototype.slice.call(arguments);
+    _args.shift();
+
+    if (!_callbacks[eventName]) {
+      return this;
+    }
+    _callbacks[eventName].forEach(function (cb) {
+      cb.apply(exports, _args);
+    });
+    return this;
   };
 
   /**
@@ -204,7 +200,7 @@ var LoginClient = {};
    *
    * @param {string} eventName
    * @param {Function} cb
-   * @returns {loginClient}
+   * @returns {LoginClient}
    */
   exports.on = function (eventName, cb) {
     _callbacks[eventName] = _callbacks[eventName] || [];
