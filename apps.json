@@ -7,13 +7,23 @@
       "args": ["start", "--silent"],
       "options": { "cwd": "./client-app" }
     }
-  },{
+  },
+  {
     "name": "auth-app",
     "cwd": "./auth-app",
     "start": {
       "bin":  "npm",
       "args": ["start" , "--silent"],
       "options": { "cwd": "./auth-app" }
+    }
+  },
+  {
+    "name": "malicious-app",
+    "cwd": "./malicious-app",
+    "start": {
+      "bin":  "npm",
+      "args": ["start" , "--silent"],
+      "options": { "cwd": "./malicious-app" }
     }
   }
 ]

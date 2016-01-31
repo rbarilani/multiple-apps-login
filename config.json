@@ -1,12 +1,13 @@
 {
 	"watchConfig": true,
 	"silent": false,
-	"ports": { 
+	"ports": {
     "80": {
       "router":  {
-		"client-app.com": "localhost:3000",
-		"auth-app.com" : "localhost:3001"
-  	  }
+		    "client-app.com": "localhost:3000",
+		    "auth-app.com" : "localhost:3001",
+        "malicious-app.com" : "localhost:3002"
+      }
     }
   }
 }
