@@ -4,10 +4,11 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "install:all": "node install.js",
     "start": "node start.js",
     "start:http-master": "sudo ./node_modules/.bin/http-master --config config.json --show-rules"
   },
-  "author": "",
+  "author": "Ruben Barilani",
   "license": "MIT",
   "dependencies": {
     "http-master": "^1.0.18",

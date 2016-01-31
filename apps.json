@@ -1,6 +1,7 @@
 [
   {
     "name": "client-app",
+    "cwd": "./client-app",
     "start": {
       "bin":  "npm",
       "args": ["start", "--silent"],
@@ -8,6 +9,7 @@
     }
   },{
     "name": "auth-app",
+    "cwd": "./auth-app",
     "start": {
       "bin":  "npm",
       "args": ["start" , "--silent"],
