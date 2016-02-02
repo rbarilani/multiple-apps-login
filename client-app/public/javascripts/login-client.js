@@ -11,6 +11,7 @@ var LoginClient = {};
     ERROR: 'error'
   };
   var STATUS = {
+    UNCONNECTED: 'unconnected',
     LOGGED_IN: 'logged_in',
     LOGGED_OUT: 'logged_out',
     ERROR: 'error'
@@ -80,7 +81,7 @@ var LoginClient = {};
     var _args = Array.prototype.slice.call(arguments);
     _args.shift();
     if(_options.debug) {
-      console[method].apply(null, _args);
+      console[method].apply(console, _args);
     }
   }
 
@@ -125,6 +126,7 @@ var LoginClient = {};
       .then(function () {
         return pool.start(function (token, error) {
           log('debug', 'POLLING THE TOKEN...', token);
+
           if (error) {
             log('error', error);
             pool.stop();
@@ -132,26 +134,37 @@ var LoginClient = {};
             return;
           }
 
-          if (token && !_currToken) {
+          if (token && !_currToken && _status === STATUS.LOGGED_OUT) {
             _currToken = token;
-            if (_status === STATUS.LOGGED_IN) { return; }
             _status = STATUS.LOGGED_IN;
+            log('debug', 'TOKEN WAS SET, USER LOGGED IN, BUT IT WAS LOGGED OUT!', token);
+            exports.trigger(EVENTS.CHANGE_LOGGED_IN);
+            return;
+          }
+
+          if (!token && _currToken && _status === STATUS.LOGGED_IN) {
+            _currToken = token;
+            _status = STATUS.LOGGED_OUT;
+            log('debug', 'TOKEN WAS REMOVED, USER LOGGED OUT, BUT IT WAS LOGGED IN!', token);
+            exports.trigger(EVENTS.CHANGE_LOGGED_OUT);
+            return;
+          }
+
+          if (token && !_currToken && _status !== STATUS.LOGGED_IN) {
+            _currToken = token;
+            _status = STATUS.LOGGED_IN;
+            log('debug', EVENTS.LOGGED_IN, _status, _currToken);
             exports.trigger(EVENTS.LOGGED_IN);
             return;
           }
 
-          if (!_currToken && !token) {
-            if (_status === STATUS.LOGGED_OUT) { return; }
+          if (!_currToken && !token && _status !== STATUS.LOGGED_OUT) {
             _status = STATUS.LOGGED_OUT;
+            log('debug', 'USER IS LOGGED OUT', token);
             exports.trigger(EVENTS.LOGGED_OUT);
             return;
           }
-
-          if (!token && _currToken) {
-            log('debug', 'TOKEN WAS REMOVED!', token);
-            _currToken = token;
-            exports.trigger(EVENTS.CHANGE_LOGGED_OUT);
-          }
+          log('debug', '... NO CHANGES', token);
         });
       })
       .then(function (token) {
@@ -161,6 +174,7 @@ var LoginClient = {};
           exports.trigger(EVENTS.LOGGED_IN);
         } else {
           _status = STATUS.LOGGED_OUT;
+          _currToken = null;
           exports.trigger(EVENTS.LOGGED_OUT);
         }
         return token;
