@@ -36,11 +36,11 @@ var LoginClient = {};
    * Pool service
    *
    * @requires {CrossStorageClient} storage
-   * @type {{_timeout: null, delay: number, started: boolean, start: Function, stop: Function}}
+   * @type {{_timeout: null, interval: number, started: boolean, start: Function, stop: Function}}
    */
   var pool = {
     _timeout: null,
-    delay: 5000,
+    interval: 5000,
     started: false,
     start: function (cb) {
       if (this.started) {return;}
@@ -58,7 +58,7 @@ var LoginClient = {};
             cb(null, error);
             _this.stop();
           });
-        }, _this.delay);
+        }, _this.interval);
       })(this);
 
       return _storage.get(TOKEN_STORAGE_KEY);
@@ -124,6 +124,8 @@ var LoginClient = {};
     return _storage
       .onConnect()
       .then(function () {
+        if(_options.interval) { pool.interval = _options.interval; }
+
         return pool.start(function (token, error) {
           log('debug', 'POLLING THE TOKEN...', token);
 

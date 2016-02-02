@@ -3,7 +3,7 @@
   var el = document.querySelector('#login-status');
 
   LoginClient
-    .init('http://auth-app.com', { debug: true });
+    .init('http://auth-app.com', { interval: 500, debug: true  });
 
   LoginClient
     .on('logged_in', function () {
