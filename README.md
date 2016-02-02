@@ -21,8 +21,11 @@ Adjust your hosts file (usually located @ ```/etc/hosts```), take a look at the 
 ## RUN
 
 ```
-npm start
+sudo npm start
 ```
+
+> we need ```sudo``` because we are binding the proxy to port 80.
+
 
 Watch the three running apps in your browser.
 
