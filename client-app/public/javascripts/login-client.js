@@ -33,15 +33,25 @@ var LoginClient = {};
   var _initialized = false;
 
   /**
-   * Pool service
+   * poll service
    *
    * @requires {CrossStorageClient} storage
-   * @type {{_timeout: null, interval: number, started: boolean, start: Function, stop: Function}}
    */
-  var pool = {
+  var poll = {
     _timeout: null,
     interval: 5000,
     started: false,
+    /**
+     * @callback getTokenCallback
+     * @param {string|null} val - token data
+     * @param {Error} [error] - error if any
+     */
+    /**
+     * Start polling token data from the storage.
+     *
+     * @param {getTokenCallback} cb - cb(token, [error]) callback called at specified inteval
+     * @returns {Promise} - resolved or rejected with the result of the first request
+     */
     start: function (cb) {
       if (this.started) {return;}
       this.started = true;
@@ -63,6 +73,11 @@ var LoginClient = {};
 
       return _storage.get(TOKEN_STORAGE_KEY);
     },
+    /**
+     * Stop polling
+     *
+     * @returns {poll}
+     */
     stop: function () {
       log('debug', 'POLL STOP', '... clear timeout', this._timeout);
       window.clearTimeout(this._timeout);
@@ -124,14 +139,14 @@ var LoginClient = {};
     return _storage
       .onConnect()
       .then(function () {
-        if(_options.interval) { pool.interval = _options.interval; }
+        if(_options.interval) { poll.interval = _options.interval; }
 
-        return pool.start(function (token, error) {
+        return poll.start(function (token, error) {
           log('debug', 'POLLING THE TOKEN...', token);
 
           if (error) {
             log('error', error);
-            pool.stop();
+            poll.stop();
             exports.trigger(EVENTS.ERROR, error);
             return;
           }
