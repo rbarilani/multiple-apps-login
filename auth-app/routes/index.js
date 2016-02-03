@@ -10,8 +10,8 @@ router.get('/cross-storage-hub', function(req, res) {
   res.render('cross-storage-hub', { layout: false });
 });
 
-router.get('/login-js-hub', function(req, res) {
-  res.render('login-js-hub', { layout: false });
+router.get('/cross-post-message-hub', function(req, res) {
+  res.render('cross-post-message-hub', { layout: false });
 });
 
 

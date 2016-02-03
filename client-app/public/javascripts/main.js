@@ -1,9 +1,9 @@
-(function () {
-
+(function (on) {
+  if(!on) {return;}
   var el = document.querySelector('#login-status');
 
   LoginClient
-    .init('http://auth-app.com', { interval: 500, debug: true  });
+    .init('http://auth-app.com', { interval: 200, debug: false  });
 
   LoginClient
     .on('logged_in', function () {
@@ -27,4 +27,17 @@
       console.log(error);
     });
 
-})();
+})(false);
+
+(function (on) {
+  if(!on) { return; }
+  var client = new CrossPostMessageClient('http://auth-app.com/cross-post-message-hub');
+
+  client.on('ready', function () {
+    client.request({ message: 'who are you?' });
+  });
+
+  client.on('response', function (response) {
+    console.log('response to request: ' + response.request.id , response);
+  });
+})(true);

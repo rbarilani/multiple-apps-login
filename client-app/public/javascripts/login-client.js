@@ -1,6 +1,7 @@
 var LoginClient = {};
 
 (function (exports) {
+
   // constants
   var EVENTS = {
     LOGGED_IN: 'logged_in',
@@ -10,19 +11,23 @@ var LoginClient = {};
     CHANGE_LOGGED_IN: 'change_logged_in',
     ERROR: 'error'
   };
+
   var STATUS = {
     UNCONNECTED: 'unconnected',
     LOGGED_IN: 'logged_in',
     LOGGED_OUT: 'logged_out',
     ERROR: 'error'
   };
+
+  var TOKEN_STORAGE_KEY = 'TOKEN';
+
   var DEFAULT = {
     AUTH_HOST: 'http://auth-app.com',
     OPTIONS: {
       debug: false
     }
   };
-  var TOKEN_STORAGE_KEY = 'TOKEN';
+
 
   // state
   var _storage;
@@ -115,8 +120,6 @@ var LoginClient = {};
    * LoginClient public api
    *
    */
-
-  // -- constants --
   exports.EVENTS = clone(EVENTS);
   exports.STATUS = clone(STATUS);
 
@@ -265,3 +268,4 @@ var LoginClient = {};
   };
 
 })(LoginClient);
+
