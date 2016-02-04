@@ -97,9 +97,15 @@ var CrossPostMessageHub = (function () {
       return;
     }
 
+    var promise = new Promise(function (resolve, reject) {
+      try{
+        definition.cb(request, resolve, reject);
+      }catch(e) {
+        reject(e);
+      }
+    });
 
-    Promise.resolve(definition.cb(request))
-      .then(function (definitionResponse) {
+    promise.then(function (definitionResponse) {
         if (typeof definitionResponse === 'string') {
           response.status = 200;
           response.body = definitionResponse;
@@ -107,7 +113,19 @@ var CrossPostMessageHub = (function () {
           response = merge(response, definitionResponse);
         }
         window.parent.postMessage(JSON.stringify(response), '*');
-      });
+    })
+    .catch(function (definitionResponse) {
+        if (typeof definitionResponse === 'string') {
+          response.status = 500;
+          response.body = definitionResponse;
+        } else {
+          response = merge(response, definitionResponse);
+        }
+        if(200 <= response.status && response.status < 300) {
+          response.status = 500;
+        }
+        window.parent.postMessage(JSON.stringify(response), '*');
+    });
   }
 
 
@@ -139,7 +157,7 @@ var CrossPostMessageHub = (function () {
    * @param {string} method HTTP method
    * @param {string|RegExp|function(string)} uri HTTP url or function that receives a url
    *   and returns true if the url matches the current definition. uri
-   * @param {function} cb - a function that will be executed when a request match the definition
+   * @param {function} cb - cb(request, resolve, reject) a function that will be executed when a request match the definition
    *
    * @returns {CrossPostMessageHub}
    */

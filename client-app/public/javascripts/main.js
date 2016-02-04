@@ -38,6 +38,9 @@
       .request({ method: 'GET',  uri: '/token' })
       .then(function (response) {
         console.log('success', response);
+      })
+      .catch(function (response) {
+        console.error(response);
       });
   });
 
