@@ -1,11 +1,12 @@
-(function (on) {
-  if(!on) {return;}
+(function () {
+
   var el = document.querySelector('#login-status');
 
   LoginClient
-    .init('http://auth-app.com', { interval: 200, debug: false  });
+    .init('http://auth-app.com', { interval: 500, debug: true  });
 
   LoginClient
+
     .on('logged_in', function () {
       console.log('YOU ARE LOGGED IN');
       el.innerText = 'You are LOGGED IN!';
@@ -13,6 +14,7 @@
     .on('logged_out', function () {
       console.log('YOU ARE LOGGED OUT');
       el.innerText = 'You are LOGGED OUT!';
+
     })
     .on('change_logged_out', function () {
       el.innerText = 'You are LOGGED OUT!';
@@ -27,21 +29,4 @@
       console.log(error);
     });
 
-})(false);
-
-(function (on) {
-  if(!on) { return; }
-  var client = new CrossPostMessageClient('http://auth-app.com/cross-post-message-hub');
-
-  client.on('ready', function () {
-    client
-      .request({ method: 'GET',  uri: '/token' })
-      .then(function (response) {
-        console.log('success', response);
-      });
-  });
-
-  client.on('response', function (response) {
-    console.log('response to request: ' + response.request.id , response);
-  });
-})(true);
+})();

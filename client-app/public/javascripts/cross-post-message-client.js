@@ -87,20 +87,24 @@ var CrossPostMessageClient = (function () {
   }
 
   /**
-   * Installs the necessary listener for the window message event. When a message
-   * is received, the client's _connected status is changed to true, and the
-   * onConnect promise is fulfilled. Given a response message, the callback
-   * corresponding to its request is invoked. If response.error holds a truthy
-   * value, the promise associated with the original request is rejected with
-   * the error. Otherwise the promise is fulfilled and passed response.result.
+   * Installs the necessary listener for the window message event.
+   * When a ready message is received, the client's _connected status is changed to true, and the
+   * ready event is fired. Given a response message, the callback
+   * corresponding to its request is invoked. If response.status holds an error value
+   * the promise associated with the original request is rejected with
+   * the error. Otherwise the promise is fulfilled and passed response.
    *
    * @private
    */
   function installListener() {
     window.addEventListener('message', function (e) {
-      console.log('client received a message', e);
 
-      // FIXME - check the origin must be === this._origin;
+      // console.log('client received a message', e);
+      // check the origin: must be sent from the hub domain;
+      if(this._origin !== e.origin) {
+        return;
+      }
+
       if(e.data === 'cross-post-message:ready') {
         if(this._connected) { return }
         this._connected = true;
@@ -112,6 +116,7 @@ var CrossPostMessageClient = (function () {
         var response = JSON.parse(e.data);
         if(response.event === 'response') {
           trigger.call(this, 'response', response);
+          onResponse.call(this, response);
         }
       }catch(e) {
         console.warn(e);
@@ -121,6 +126,13 @@ var CrossPostMessageClient = (function () {
     }.bind(this), false);
   }
 
+  /**
+   * Call every function in the _callbacks stack
+   * for a specific event
+   *
+   * @param {string} eventName - the event name
+   * @returns {CrossPostMessageClient}
+   */
   function trigger(eventName) {
     var _args = Array.prototype.slice.call(arguments);
     _args.shift();
@@ -131,30 +143,102 @@ var CrossPostMessageClient = (function () {
     this._callbacks[eventName].forEach(function (cb) {
       cb.apply(this, _args);
     }.bind(this));
+
     return this;
   }
 
-  function CrossPostMessageClient(url) {
+  /**
+   * On response handler, it's called when we receive a response from the hub
+   *
+   * @private
+   *
+   * @param response
+   */
+  function onResponse(response) {
+    var request = this._requests[response.request.id];
+
+    if(!request) { return; }
+    clearTimeout(request.timeout);
+    if(200 <= response.status && response.status < 300) {
+      request.resolve(response);
+    }else{
+      request.reject(response);
+    }
+
+    delete this._requests[response.request.id];
+  }
+
+  /**
+   * Constructs a new cross post message client given the url to a hub. By default,
+   * an iframe is created within the document body that points to the url. It
+   * also accepts an options object, which may include a timeout, and
+   * promise. The timeout, in milliseconds, is applied to each request and
+   * defaults to 5000ms. If the promise key is supplied the constructor for a Promise, that Promise library
+   * will be used instead of the default window.Promise.
+   *
+   * @param {string} url
+   * @constructor
+   */
+  function CrossPostMessageClient(url, opts) {
+    var _opts = opts || {};
+    this._Promise = _opts.promise || Promise;
+    this._timeout = _opts.timeout || 5000;
     this._id  = generateUUID();
     this._origin = getOrigin(url);
     this._hub = createFrame(url, 'cross-post-message:' + this._id).contentWindow;
     this._connected = false;
     this._callbacks = {};
+    this._requests = {};
     installListener.call(this);
   }
 
-  CrossPostMessageClient.prototype.on = function (name, cb) {
-    this._callbacks[name] = this._callbacks[name] || [];
-    this._callbacks[name].push(cb);
+  /**
+   * Subscribe to events
+   *
+   * @param {string} eventName - event name (ready|response)
+   * @param {Function} cb - the function to be invoked
+   * @returns {CrossPostMessageClient}
+   */
+  CrossPostMessageClient.prototype.on = function (eventName, cb) {
+    this._callbacks[eventName] = this._callbacks[eventName] || [];
+    this._callbacks[eventName].push(cb);
     return this;
   };
 
+  /**
+   * Sends a request to the hub.
+   * Stores a requested object in the _requests object for later invocation when response arrive, or
+   * deletion on timeout. Returns a promise that is settled in either instance.
+   *
+   * @returns {Promise} A promise that is settled on hub response or timeout
+   */
   CrossPostMessageClient.prototype.request = function (request) {
+    var _this = this;
+
     if(!this._connected) { return this; }
+
     request.event = 'request';
     request.id = generateUUID();
+
     this._hub.postMessage(JSON.stringify(request), this._origin);
-    return this;
+
+    return new this._Promise(function (resolve, reject) {
+      var timeout = setTimeout(function() {
+        delete _this._requests[request.id];
+        reject({
+          event: 'response',
+          status: 500,
+          body: 'cross-post-message-client request timeout',
+          request: request.id
+        });
+      }, _this._timeout || 3000);
+
+      _this._requests[request.id] = {
+        resolve: resolve,
+        reject: reject,
+        timeout: timeout
+      }
+    });
   };
 
   return CrossPostMessageClient;
